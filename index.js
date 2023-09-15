@@ -1,7 +1,8 @@
 const URLkommuner = "http://localhost:8080/getkommuner";
-//const URLkommune  = `http://localhost:8080/kommune/${region}`;
+const URLkommune  = `http://localhost:8080/kommune/${region}`;
 const URLRegioner = "http://localhost:8080/getregioner";
 
+let kommuner = []
 //Handlers
 function setUpHandlers() {
     document.getElementById("kommune-table-body").onclick = handleTableClick
@@ -80,14 +81,14 @@ function handleTableClick(evt) {
                     console.error(err.message)
                 }
             })
-        kommuner = kommuner.filter(s => s.id !== idToDelete)
+        kommuner = kommuner.filter(k => k.id !== idToDelete)
 
         makeRows()
     }
 
     if (target.dataset.idEdit){
         const idToEdit = Number(target.dataset.idEdit)
-        const kommuner = kommuner.find(s => s.id === idToEdit)
+        kommuner = kommuner.find(k => k.id === idToEdit)
         showModal(kommuner)
     }
 }
@@ -107,23 +108,24 @@ async function handleHttpErrors(res) {
 
 function showModal(kommune) {
     const myModal = new bootstrap.Modal(document.getElementById('kommune-modal'))
-    document.getElementById("modal-title").innerText = kommuner.id ? "Edit Kommuner" : "Add Kommuner"
-    document.getElementById("kommuneKode").innerText = kommuner.id
-    document.getElementById("kommune-navn").value = kommuner.name
+    document.getElementById("modal-title").innerText = kommune.id ? "Edit Kommuner" : "Add Kommuner"
+    document.getElementById("kommuneKode").innerText = kommune.kode
+    document.getElementById("kommune-navn").value = kommune.name
 
     myModal.show()
 }
-//Kommune
-async function saveKommune() {
-    let kommuner = {}
-    kommuner.kode = Number(document.getElementById("input-kode").innerText)
-    kommuner.navn = document.getElementById("input-navn").value
-    kommuner.region = document.getElementById("input-region").value
+// SAVE
+async function saveStudent() {
+    let kommune = {}
+    kommune.id = Number(document.getElementById("kommuneKode").innerText)
+    kommune.name = document.getElementById("input-navn").value
+    kommune.bornDate = document.getElementById("input-region").value
 
-    if (kommuner.kode){
-        const options = makeOptions("PUT",kommuner)
+    if (kommune.id){ //Edit
+
+        const options = makeOptions("PUT",student)
         try {
-            kommuner = await fetch(`${URLkommuner}/${kommuner.kode}`,options)
+            kommune = await fetch(`${URLkommuner}/${kommune.kode}`,options)
                 .then(handleHttpErrors)
         }catch (err){
             if (err.apiError){
@@ -132,11 +134,12 @@ async function saveKommune() {
                 console.error(err.message)
             }
         }
-        kommuner = kommuner.map(s => (k.kode === kommuner.kode) ? kommuner : s)
+
+        kommuner = kommuner.map(k => (k.kode === kommune.kode) ? kommune : k)
     } else {
-        const options = makeOptions("POST",kommuner)
+        const options = makeOptions("POST",student)
         try {
-            kommuner = await fetch(URLkommuner,options)
+            kommune = await fetch(URLkommuner,options)
                 .then(handleHttpErrors)
 
         } catch (err){
@@ -146,7 +149,44 @@ async function saveKommune() {
                 console.log(err.message)
             }
         }
-        kommuner.push(kommuner)
+        kommuner.push(kommune)
+    }
+
+    makeRows()
+}
+//Kommune
+async function saveKommune() {
+    let newKommune = {} // Use a different variable name here
+    newKommune.kode = Number(document.getElementById("input-kode").innerText)
+    newKommune.navn = document.getElementById("input-navn").value
+    newKommune.region = document.getElementById("input-region").value
+
+    if (newKommune.kode){
+        const options = makeOptions("PUT", newKommune)
+        try {
+            newKommune = await fetch(`${URLkommuner}/${newKommune.kode}`, options)
+                .then(handleHttpErrors)
+        } catch (err){
+            if (err.apiError){
+                console.error("Full API error: ", err.apiError)
+            } else {
+                console.error(err.message)
+            }
+        }
+        kommuner = kommuner.map(k => (k.kode === newKommune.kode) ? newKommune : k)
+    } else {
+        const options = makeOptions("POST", newKommune)
+        try {
+            newKommune = await fetch(URLkommuner, options)
+                .then(handleHttpErrors)
+        } catch (err){
+            if (err.apiError){
+                console.log("Full API error: ", err.apiError)
+            } else {
+                console.log(err.message)
+            }
+        }
+        kommuner.push(newKommune)
     }
 
     makeRows()
