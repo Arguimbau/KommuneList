@@ -47,52 +47,63 @@ function makeRows() {
 fetchRegioner()
 fetchKommuner()
 async function fetchKommuner() {
-
     try {
-        kommuner = await fetch(URLkommuner)
-            .then(handleHttpErrors)
-        console.log(kommuner)
+        const response = await fetch(URLkommuner);
+        const data = await response.json();
+        console.log(data); // Log the response data
+        kommuner = data; // Assign the response data to kommuner
+        makeRows(); // Update the table rows with the new data
     } catch (err) {
         if (err.apiError) {
-            console.error("Full API error: ", err.apiError)
-        }else {
-            console.error(err.message)
+            console.error("Full API error: ", err.apiError);
+        } else {
+            console.error(err.message);
         }
     }
-
-    makeRows()
 }
+
 //Edit & Delete
-function handleTableClick(evt) {
-    evt.preventDefault()
-    evt.stopPropagation()
+async function handleTableClick(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
     const target = evt.target;
 
     if (target.dataset.idDelete) {
-        const idToDelete = Number(target.dataset.idDelete)
+        const idToDelete = Number(target.dataset.idDelete);
 
-        const options = makeOptions("DELETE")
+        const options = makeOptions("DELETE");
         fetch(`${URLkommuner}/${idToDelete}`, options)
             .then(handleHttpErrors)
-            .catch(err =>{
-                if (err.apiError){
-                    console.error("Full API error: ", err.apiError)
-
-                }else{
-                    console.error(err.message)
+            .catch(err => {
+                if (err.apiError) {
+                    console.error("Full API error: ", err.apiError);
+                } else {
+                    console.error(err.message);
                 }
-            })
-        kommuner = kommuner.filter(k => k.id !== idToDelete)
+            });
 
-        makeRows()
+        // Filter out the deleted item from the kommuner array
+        kommuner = kommuner.filter(k => k.id !== idToDelete);
+
+        makeRows();
     }
 
-    if (target.dataset.idEdit){
-        const idToEdit = Number(target.dataset.idEdit)
-        kommuner = kommuner.find(k => k.id === idToEdit)
-        showModal(kommuner)
+    if (target.dataset.idEdit) {
+        const idToEdit = Number(target.dataset.idEdit);
+
+        // Use await to ensure fetchKommuner() completes before proceeding
+        await fetchKommuner();
+
+        // Find the kommune object to edit without modifying the kommuner array
+        const kommuneToEdit = kommuner.find(k => k.id === idToEdit);
+
+        showModal(kommuneToEdit); // Pass the found kommune object to showModal
     }
+
 }
+
+
+
 
 //Error
 
@@ -109,60 +120,28 @@ async function handleHttpErrors(res) {
 
 function showModal(kommune) {
     const myModal = new bootstrap.Modal(document.getElementById('kommune-modal'));
+    const kodeInput = document.getElementById("input-kode");
+    const nameInput = document.getElementById("input-name");
+
+    // Set the value of the Kode input field to the Kode value and make it readonly
+    kodeInput.value = kommune && kommune.kode ? kommune.kode : "NOT FOUND";
+    kodeInput.setAttribute("readonly", true);
+
+    // Set the value of the Name input field to the Navn value
+    nameInput.value = kommune && kommune.navn ? kommune.navn : "";
+
     document.getElementById("modal-title").innerText = kommune && kommune.kode ? "Edit Kommuner" : "Add Kommuner";
     document.getElementById("kommuneKode").innerText = kommune && kommune.kode ? kommune.kode : "";
-    document.getElementById("input-kode").value = kommune && kommune.kode ? kommune.kode : ""; // Corrected ID
-    document.getElementById("input-name").value = kommune && kommune.navn ? kommune.navn : ""; // Corrected ID
 
     myModal.show();
 }
 
 
-// SAVE
-async function saveStudent() {
-    let kommune = {}
-    kommune.id = Number(document.getElementById("kommuneKode").innerText)
-    kommune.name = document.getElementById("input-navn").value
-    kommune.bornDate = document.getElementById("input-region").value
-
-    if (kommune.id){ //Edit
-
-        const options = makeOptions("PUT",kommune)
-        try {
-            kommune = await fetch(`${URLkommune}/${kommune.kode}`,options)
-                .then(handleHttpErrors)
-        }catch (err){
-            if (err.apiError){
-                console.error("Full API error: ", err.apiError)
-            }else {
-                console.error(err.message)
-            }
-        }
-
-        kommuner = kommuner.map(k => (k.kode === kommune.kode) ? kommune : k)
-    } else {
-        const options = makeOptions("POST",kommune)
-        try {
-            kommune = await fetch(URLkommuner,options)
-                .then(handleHttpErrors)
-
-        } catch (err){
-            if (err.apiError){
-                console.log("Full API error: ", err.apiError)
-            }else {
-                console.log(err.message)
-            }
-        }
-        kommuner.push(kommune)
-    }
-
-    makeRows()
-}
-//Kommune
+// SAVE Kommune
 async function saveKommune() {
-    let newKommune = {} // Use a different variable name here
-    newKommune.kode = Number(document.getElementById("input-kode").innerText)
-    newKommune.navn = document.getElementById("input-navn").value
+    let newKommune = {}
+    newKommune.kode = document.getElementById("input-kode").value; // Corrected ID
+    newKommune.navn = document.getElementById("input-name").value; // Corrected ID
     newKommune.region = document.getElementById("input-region").value
 
     if (newKommune.kode){
@@ -194,4 +173,20 @@ async function saveKommune() {
     }
 
     makeRows()
+}
+
+
+function makeOptions(method, data) {
+    const options = {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    };
+
+    if (data) {
+        options.body = JSON.stringify(data);
+    }
+
+    return options;
 }
