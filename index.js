@@ -1,5 +1,6 @@
 const URLkommuner = "http://localhost:8080/getkommuner";
-const URLkommune  = `http://localhost:8080/kommune/${region}`;
+let kode = ""
+const URLkommune  = `http://localhost:8080/getkommunebykode/${kode}`;
 const URLRegioner = "http://localhost:8080/getregioner";
 
 let kommuner = []
@@ -107,13 +108,16 @@ async function handleHttpErrors(res) {
 //Modal
 
 function showModal(kommune) {
-    const myModal = new bootstrap.Modal(document.getElementById('kommune-modal'))
-    document.getElementById("modal-title").innerText = kommune.id ? "Edit Kommuner" : "Add Kommuner"
-    document.getElementById("kommuneKode").innerText = kommune.kode
-    document.getElementById("kommune-navn").value = kommune.name
+    const myModal = new bootstrap.Modal(document.getElementById('kommune-modal'));
+    document.getElementById("modal-title").innerText = kommune && kommune.kode ? "Edit Kommuner" : "Add Kommuner";
+    document.getElementById("kommuneKode").innerText = kommune && kommune.kode ? kommune.kode : "";
+    document.getElementById("input-kode").value = kommune && kommune.kode ? kommune.kode : ""; // Corrected ID
+    document.getElementById("input-name").value = kommune && kommune.navn ? kommune.navn : ""; // Corrected ID
 
-    myModal.show()
+    myModal.show();
 }
+
+
 // SAVE
 async function saveStudent() {
     let kommune = {}
@@ -123,9 +127,9 @@ async function saveStudent() {
 
     if (kommune.id){ //Edit
 
-        const options = makeOptions("PUT",student)
+        const options = makeOptions("PUT",kommune)
         try {
-            kommune = await fetch(`${URLkommuner}/${kommune.kode}`,options)
+            kommune = await fetch(`${URLkommune}/${kommune.kode}`,options)
                 .then(handleHttpErrors)
         }catch (err){
             if (err.apiError){
@@ -137,7 +141,7 @@ async function saveStudent() {
 
         kommuner = kommuner.map(k => (k.kode === kommune.kode) ? kommune : k)
     } else {
-        const options = makeOptions("POST",student)
+        const options = makeOptions("POST",kommune)
         try {
             kommune = await fetch(URLkommuner,options)
                 .then(handleHttpErrors)
