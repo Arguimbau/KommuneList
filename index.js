@@ -2,6 +2,7 @@ const URLkommuner = "http://localhost:8080/getkommuner";
 let kode = ""
 const URLkommune  = `http://localhost:8080/getkommunebykode/${kode}`;
 const URLRegioner = "http://localhost:8080/getregioner";
+const URLdeleteKommune = `http://localhost:8080/deletekommune/${kode}`;
 
 let kommuner = []
 //Handlers
@@ -36,9 +37,9 @@ function makeRows() {
             <td>${k.kode}</td>
             <td>${k.navn}</td>
             <td>${k.region.navn}</td>
-            <td><a data-id-delete=${k.id} href="#">Delete</a></td>
+            <td><a data-id-delete=${k.kode} href="#">Delete</a></td>
             <!-- <td><a data-data-edit='${JSON.stringify(k)}' href="#">Edit</a></td> -->
-            <td><a data-id-edit='${k.id}' href="#">Edit</a></td>
+            <td><a data-id-edit='${k.kode}' href="#">Edit</a></td>
         </tr>
         `)
     document.getElementById("kommune-table-body").innerHTML = rows.join("")
@@ -69,10 +70,10 @@ async function handleTableClick(evt) {
     const target = evt.target;
 
     if (target.dataset.idDelete) {
-        const idToDelete = Number(target.dataset.idDelete);
+        const idToDelete = target.dataset.idDelete;
 
         const options = makeOptions("DELETE");
-        fetch(`${URLkommuner}/${idToDelete}`, options)
+        fetch(`${URLdeleteKommune}/${idToDelete}`, options)
             .then(handleHttpErrors)
             .catch(err => {
                 if (err.apiError) {
@@ -83,19 +84,22 @@ async function handleTableClick(evt) {
             });
 
         // Filter out the deleted item from the kommuner array
-        kommuner = kommuner.filter(k => k.id !== idToDelete);
+        kommuner = kommuner.filter(k => k.kode !== idToDelete);
 
         makeRows();
     }
 
     if (target.dataset.idEdit) {
-        const idToEdit = Number(target.dataset.idEdit);
+        const idToEdit = target.dataset.idEdit;
+
+        //Update kode to idToEdit
+        kode = idToEdit
 
         // Use await to ensure fetchKommuner() completes before proceeding
         await fetchKommuner();
 
         // Find the kommune object to edit without modifying the kommuner array
-        const kommuneToEdit = kommuner.find(k => k.id === idToEdit);
+        const kommuneToEdit = kommuner.find(k => k.kode === idToEdit);
 
         showModal(kommuneToEdit); // Pass the found kommune object to showModal
     }
